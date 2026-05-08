@@ -1,0 +1,14 @@
+# Visual Studio
+.vs/
+
+# Build çıktıları
+bin/
+obj/
+
+# User dosyaları
+*.user
+*.suo
+
+# DB/log
+*.db
+*.log
