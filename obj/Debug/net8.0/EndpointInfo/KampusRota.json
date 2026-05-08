@@ -1,0 +1,432 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "KampusRota",
+    "version": "1.0"
+  },
+  "paths": {
+    "/api/rides": {
+      "get": {
+        "tags": [
+          "KampusRota"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "KampusRota"
+        ],
+        "parameters": [
+          {
+            "name": "kullaniciId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Yolculuk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/rides/search": {
+      "get": {
+        "tags": [
+          "KampusRota"
+        ],
+        "parameters": [
+          {
+            "name": "kalkis",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "varis",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tarih",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/rides/{id}": {
+      "put": {
+        "tags": [
+          "KampusRota"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "kullaniciId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Yolculuk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "KampusRota"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "silenKullaniciId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/users/register": {
+      "post": {
+        "tags": [
+          "KampusRota"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Kullanici"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/users/login": {
+      "post": {
+        "tags": [
+          "KampusRota"
+        ],
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sifre",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/users/{id}/change-password": {
+      "put": {
+        "tags": [
+          "KampusRota"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SifreDegistirmeIstegi"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Kullanici": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "olusturulmaTarihi": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "olusturanKullaniciId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "guncellenmeTarihi": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "guncelleyenKullaniciId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "aktifMi": {
+            "type": "boolean"
+          },
+          "silindiMi": {
+            "type": "boolean"
+          },
+          "silinmeTarihi": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "silenKullaniciId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "ad": {
+            "type": "string",
+            "nullable": true
+          },
+          "soyad": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "sifreHash": {
+            "type": "string",
+            "nullable": true
+          },
+          "telefonNumarasi": {
+            "type": "string",
+            "nullable": true
+          },
+          "ogrenciNumarasi": {
+            "type": "string",
+            "nullable": true
+          },
+          "profilFotografiUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "cinsiyet": {
+            "type": "string",
+            "nullable": true
+          },
+          "ortalamaPuan": {
+            "type": "number",
+            "format": "double"
+          },
+          "biyografi": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SifreDegistirmeIstegi": {
+        "type": "object",
+        "properties": {
+          "eskiSifre": {
+            "type": "string",
+            "nullable": true
+          },
+          "yeniSifre": {
+            "type": "string",
+            "nullable": true
+          },
+          "yeniSifreTekrar": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Yolculuk": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "olusturulmaTarihi": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "olusturanKullaniciId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "guncellenmeTarihi": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "guncelleyenKullaniciId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "aktifMi": {
+            "type": "boolean"
+          },
+          "silindiMi": {
+            "type": "boolean"
+          },
+          "silinmeTarihi": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "silenKullaniciId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "surucuId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "kalkisNoktasi": {
+            "type": "string",
+            "nullable": true
+          },
+          "varisNoktasi": {
+            "type": "string",
+            "nullable": true
+          },
+          "kalkisZamani": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "bosKoltukSayisi": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "kisiBasiUcret": {
+            "type": "number",
+            "format": "double"
+          },
+          "aciklama": {
+            "type": "string",
+            "nullable": true
+          },
+          "sadeceKadinlarMi": {
+            "type": "boolean"
+          },
+          "surucu": {
+            "$ref": "#/components/schemas/Kullanici"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

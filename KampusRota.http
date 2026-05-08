@@ -1,0 +1,6 @@
+@KampusRota_HostAddress = http://localhost:5021
+
+GET {{KampusRota_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
