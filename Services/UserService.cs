@@ -15,7 +15,7 @@ namespace KampusRota.Services
             _context = context;
         }
 
-        public async Task<Kullanici> KayitOlAsync(Kullanici kullanici)
+        public async Task<Kullanici?> KayitOlAsync(Kullanici kullanici)
         {
             // Aynı email ile daha önce kayıt olunmuş mu ve bu hesap silinmemiş mi kontrolü
             if (await _context.Kullanicilar.AnyAsync(k => k.Email == kullanici.Email && !k.SilindiMi))
@@ -30,7 +30,7 @@ namespace KampusRota.Services
             return kullanici;
         }
 
-        public async Task<Kullanici> GirisYapAsync(string email, string sifre)
+        public async Task<Kullanici?> GirisYapAsync(string email, string sifre)
         {
             // Kullanıcı girişi yaparken hesabın SİLİNMEMİŞ ve AKTİF olması şartını arıyoruz
             var kullanici = await _context.Kullanicilar

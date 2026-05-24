@@ -13,7 +13,7 @@ namespace KampusRota.Services
 
          Task<Yolculuk> YolculukEkleAsync(Yolculuk yolculuk, int kullaniciId);
 
-         Task<Yolculuk> YolculukGuncelleAsync(int id, Yolculuk guncelYolculuk, int kullaniciId);
+         Task<Yolculuk?> YolculukGuncelleAsync(int id, Yolculuk guncelYolculuk, int kullaniciId);
 
          Task<bool> YolculukSilAsync(int id, int silenKullaniciId);
     }

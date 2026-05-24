@@ -12,6 +12,6 @@
         public string Aciklama { get; set; } = string.Empty;
         public bool SadeceKadinlarMi { get; set; } = false; 
 
-        public virtual Kullanici Surucu { get; set; }
+        public virtual Kullanici? Surucu { get; set; }
     }
 }

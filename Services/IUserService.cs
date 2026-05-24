@@ -5,9 +5,9 @@ namespace KampusRota.Services
 {
     public interface IKullaniciService
     {
-         Task<Kullanici> KayitOlAsync(Kullanici kullanici);
+         Task<Kullanici?> KayitOlAsync(Kullanici kullanici);
 
-         Task<Kullanici> GirisYapAsync(string email, string sifre);
+         Task<Kullanici?> GirisYapAsync(string email, string sifre);
 
          Task<bool> SifreDegistirAsync(int kullaniciId, SifreDegistirmeIstegi istek);
     }

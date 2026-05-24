@@ -54,7 +54,7 @@ namespace KampusRota.Services
             return yolculuk;
         }
 
-        public async Task<Yolculuk> YolculukGuncelleAsync(int id, Yolculuk guncelYolculuk, int kullaniciId)
+        public async Task<Yolculuk?> YolculukGuncelleAsync(int id, Yolculuk guncelYolculuk, int kullaniciId)
         {
             var mevcutYolculuk = await _context.Yolculuklar.FindAsync(id);
 
