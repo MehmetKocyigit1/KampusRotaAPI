@@ -39,14 +39,28 @@ using Microsoft.AspNetCore.Mvc;
 
     app.MapPost("/api/rides", async (IYolculukService yolculukService, [FromBody] Yolculuk yeniYolculuk, int kullaniciId) =>
     {
-        var createdRide = await yolculukService.YolculukEkleAsync(yeniYolculuk, kullaniciId);
-        return Results.Created($"/api/rides/{createdRide.Id}", createdRide);
+        try
+        {
+            var createdRide = await yolculukService.YolculukEkleAsync(yeniYolculuk, kullaniciId);
+            return Results.Created($"/api/rides/{createdRide.Id}", createdRide);
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(ex.Message);
+        }
     });
 
     app.MapPut("/api/rides/{id}", async (IYolculukService yolculukService, int id, [FromBody] Yolculuk guncelYolculuk, int kullaniciId) =>
     {
-        var result = await yolculukService.YolculukGuncelleAsync(id, guncelYolculuk, kullaniciId);
-        return result != null ? Results.Ok(result) : Results.NotFound("İlan bulunamadı veya silinmiş.");
+        try
+        {
+            var result = await yolculukService.YolculukGuncelleAsync(id, guncelYolculuk, kullaniciId);
+            return result != null ? Results.Ok(result) : Results.NotFound("İlan bulunamadı veya silinmiş.");
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(ex.Message);
+        }
     });
 
     app.MapDelete("/api/rides/{id}", async (IYolculukService yolculukService, int id, int silenKullaniciId) =>
@@ -55,182 +69,43 @@ using Microsoft.AspNetCore.Mvc;
         return isDeleted ? Results.Ok(new { message = "İlan başarıyla silindi." }) : Results.NotFound("İlan bulunamadı veya zaten silinmiş.");
     });
 
-    app.MapPost("/api/rides/{id}/requests", async (AppDbContext context, int id, int yolcuId, [FromBody] YolculukTalebi? talep) =>
+    app.MapPost("/api/rides/{id}/requests", async (IYolculukService yolculukService, int id, int yolcuId, [FromBody] YolculukTalebi? talep) =>
     {
-        var yolculuk = await context.Yolculuklar.FirstOrDefaultAsync(y => y.Id == id && !y.SilindiMi);
-        if (yolculuk == null) return Results.NotFound("İlan bulunamadı.");
-        if (yolculuk.SurucuId == yolcuId) return Results.BadRequest("Kendi ilanına katılım talebi gönderemezsin.");
-        if (!yolculuk.AktifMi || yolculuk.BosKoltukSayisi <= 0) return Results.BadRequest("Bu ilan katılıma uygun değil.");
-
-        var mevcutTalep = await context.YolculukTalepleri
-            .FirstOrDefaultAsync(t => t.YolculukId == id && t.YolcuId == yolcuId && !t.SilindiMi && t.Durum != "Reddedildi");
-        if (mevcutTalep != null) return Results.Ok(mevcutTalep);
-
-        var yeniTalep = new YolculukTalebi
-        {
-            YolculukId = id,
-            YolcuId = yolcuId,
-            TalepMesaji = talep?.TalepMesaji ?? string.Empty,
-            Durum = "Bekliyor",
-            TalepTarihi = DateTime.UtcNow,
-            OlusturulmaTarihi = DateTime.UtcNow,
-            OlusturanKullaniciId = yolcuId,
-            AktifMi = true,
-            SilindiMi = false
-        };
-
-        context.YolculukTalepleri.Add(yeniTalep);
-        await context.SaveChangesAsync();
-        return Results.Created($"/api/rides/requests/{yeniTalep.Id}", yeniTalep);
+        var result = await yolculukService.KatilmaTalebiOlusturAsync(id, yolcuId, talep?.TalepMesaji ?? string.Empty);
+        return result.Success && result.StatusCode == 201
+            ? Results.Created($"/api/rides/requests/{result.Value!.Id}", result.Value)
+            : ToHttpResult(result);
     });
 
-    app.MapGet("/api/rides/requests/driver/{surucuId}", async (AppDbContext context, int surucuId) =>
+    app.MapGet("/api/rides/requests/driver/{surucuId}", async (IYolculukService yolculukService, int surucuId) =>
     {
-        var talepler = await context.YolculukTalepleri
-            .Include(t => t.Yolculuk)
-            .Include(t => t.Yolcu)
-            .Where(t => !t.SilindiMi && t.Yolculuk != null && t.Yolculuk!.SurucuId == surucuId)
-            .OrderByDescending(t => t.TalepTarihi)
-            .ToListAsync();
-
+        var talepler = await yolculukService.SurucuTalepleriniGetirAsync(surucuId);
         return Results.Ok(talepler);
     });
 
-    app.MapGet("/api/rides/requests/passenger/{yolcuId}", async (AppDbContext context, int yolcuId) =>
+    app.MapGet("/api/rides/requests/passenger/{yolcuId}", async (IYolculukService yolculukService, int yolcuId) =>
     {
-        var talepler = await context.YolculukTalepleri
-            .Include(t => t.Yolculuk)
-            .ThenInclude(y => y!.Surucu)
-            .Include(t => t.Yolcu)
-            .Where(t => !t.SilindiMi && t.YolcuId == yolcuId)
-            .OrderByDescending(t => t.TalepTarihi)
-            .ToListAsync();
-
+        var talepler = await yolculukService.YolcuTalepleriniGetirAsync(yolcuId);
         return Results.Ok(talepler);
     });
 
-    app.MapPut("/api/rides/requests/{talepId}/status", async (AppDbContext context, int talepId, int surucuId, bool onaylandi, string? not) =>
+    app.MapPut("/api/rides/requests/{talepId}/status", async (IYolculukService yolculukService, int talepId, int surucuId, bool onaylandi, string? not) =>
     {
-        var talep = await context.YolculukTalepleri
-            .Include(t => t.Yolculuk)
-            .FirstOrDefaultAsync(t => t.Id == talepId && !t.SilindiMi);
-        if (talep?.Yolculuk == null) return Results.NotFound("Talep bulunamadı.");
-        if (talep.Yolculuk.SurucuId != surucuId) return Results.Forbid();
-        if (talep.Durum != "Bekliyor") return Results.BadRequest("Bu talep daha önce sonuçlandırılmış.");
-
-        talep.Durum = onaylandi ? "Onaylandı" : "Reddedildi";
-        talep.SurucuNotu = not ?? string.Empty;
-        talep.OnayTarihi = DateTime.UtcNow;
-        talep.GuncellenmeTarihi = DateTime.UtcNow;
-        talep.GuncelleyenKullaniciId = surucuId;
-
-        if (onaylandi)
-        {
-            if (talep.Yolculuk.BosKoltukSayisi <= 0) return Results.BadRequest("Boş koltuk kalmadı.");
-
-            talep.Yolculuk.BosKoltukSayisi -= 1;
-            talep.Yolculuk.GuncellenmeTarihi = DateTime.UtcNow;
-            talep.Yolculuk.GuncelleyenKullaniciId = surucuId;
-
-            if (talep.Yolculuk.BosKoltukSayisi <= 0)
-            {
-                talep.Yolculuk.BosKoltukSayisi = 0;
-                talep.Yolculuk.AktifMi = false;
-                talep.Yolculuk.SilindiMi = true;
-                talep.Yolculuk.SilinmeTarihi = DateTime.UtcNow;
-                talep.Yolculuk.SilenKullaniciId = surucuId;
-
-                var digerBekleyenTalepler = await context.YolculukTalepleri
-                    .Where(t =>
-                        t.YolculukId == talep.YolculukId &&
-                        t.Id != talep.Id &&
-                        !t.SilindiMi &&
-                        t.Durum == "Bekliyor")
-                    .ToListAsync();
-
-                foreach (var bekleyenTalep in digerBekleyenTalepler)
-                {
-                    bekleyenTalep.Durum = "Reddedildi";
-                    bekleyenTalep.SurucuNotu = "Koltuklar dolduğu için talep otomatik reddedildi.";
-                    bekleyenTalep.OnayTarihi = DateTime.UtcNow;
-                    bekleyenTalep.GuncellenmeTarihi = DateTime.UtcNow;
-                    bekleyenTalep.GuncelleyenKullaniciId = surucuId;
-                }
-            }
-            else
-            {
-                talep.Yolculuk.AktifMi = true;
-            }
-        }
-
-        await context.SaveChangesAsync();
-        return Results.Ok(talep);
+        var result = await yolculukService.TalepDurumuGuncelleAsync(talepId, surucuId, onaylandi, not);
+        return ToHttpResult(result);
     });
 
-    app.MapPost("/api/rides/{id}/reviews", async (AppDbContext context, int id, int yorumYapanKullaniciId, int puanlananKullaniciId, [FromBody] YolculukYorumu yorum) =>
+    app.MapPost("/api/rides/{id}/reviews", async (IYolculukService yolculukService, int id, int yorumYapanKullaniciId, int puanlananKullaniciId, [FromBody] YolculukYorumu yorum) =>
     {
-        if (yorum.Puan < 1 || yorum.Puan > 5) return Results.BadRequest("Puan 1 ile 5 arasında olmalı.");
-
-        var yolculuk = await context.Yolculuklar.FirstOrDefaultAsync(y => y.Id == id && !y.SilindiMi);
-        if (yolculuk == null) return Results.NotFound("Yolculuk bulunamadı.");
-
-        var katilimVarMi = yolculuk.SurucuId == yorumYapanKullaniciId ||
-            await context.YolculukTalepleri.AnyAsync(t =>
-                t.YolculukId == id &&
-                t.YolcuId == yorumYapanKullaniciId &&
-                t.Durum == "Onaylandı" &&
-                !t.SilindiMi);
-        if (!katilimVarMi) return Results.BadRequest("Sadece yolculuğa katılan kullanıcılar yorum yapabilir.");
-
-        var mevcutYorum = await context.YolculukYorumlari.FirstOrDefaultAsync(y =>
-            y.YolculukId == id &&
-            y.YorumYapanKullaniciId == yorumYapanKullaniciId &&
-            y.PuanlananKullaniciId == puanlananKullaniciId &&
-            !y.SilindiMi);
-        if (mevcutYorum != null) return Results.BadRequest("Bu kullanıcı için bu yolculukta zaten yorum yapılmış.");
-
-        var yeniYorum = new YolculukYorumu
-        {
-            YolculukId = id,
-            YorumYapanKullaniciId = yorumYapanKullaniciId,
-            PuanlananKullaniciId = puanlananKullaniciId,
-            Puan = yorum.Puan,
-            Yorum = yorum.Yorum ?? string.Empty,
-            YorumTarihi = DateTime.UtcNow,
-            OlusturulmaTarihi = DateTime.UtcNow,
-            OlusturanKullaniciId = yorumYapanKullaniciId,
-            AktifMi = true,
-            SilindiMi = false
-        };
-
-        context.YolculukYorumlari.Add(yeniYorum);
-
-        var puanlanan = await context.Kullanicilar.FirstOrDefaultAsync(k => k.Id == puanlananKullaniciId && !k.SilindiMi);
-        if (puanlanan != null)
-        {
-            var puanlar = await context.YolculukYorumlari
-                .Where(y => y.PuanlananKullaniciId == puanlananKullaniciId && !y.SilindiMi)
-                .Select(y => y.Puan)
-                .ToListAsync();
-            puanlar.Add(yeniYorum.Puan);
-            puanlanan.OrtalamaPuan = Math.Round(puanlar.Average(), 1);
-            puanlanan.GuncellenmeTarihi = DateTime.UtcNow;
-            puanlanan.GuncelleyenKullaniciId = yorumYapanKullaniciId;
-        }
-
-        await context.SaveChangesAsync();
-        return Results.Created($"/api/rides/{id}/reviews/{yeniYorum.Id}", yeniYorum);
+        var result = await yolculukService.YolculukYorumuEkleAsync(id, yorumYapanKullaniciId, puanlananKullaniciId, yorum);
+        return result.Success && result.StatusCode == 201
+            ? Results.Created($"/api/rides/{id}/reviews/{result.Value!.Id}", result.Value)
+            : ToHttpResult(result);
     });
 
-    app.MapGet("/api/rides/{id}/reviews", async (AppDbContext context, int id) =>
+    app.MapGet("/api/rides/{id}/reviews", async (IYolculukService yolculukService, int id) =>
     {
-        var yorumlar = await context.YolculukYorumlari
-            .Include(y => y.YorumYapanKullanici)
-            .Include(y => y.PuanlananKullanici)
-            .Where(y => y.YolculukId == id && !y.SilindiMi)
-            .OrderByDescending(y => y.YorumTarihi)
-            .ToListAsync();
-
+        var yorumlar = await yolculukService.YolculukYorumlariniGetirAsync(id);
         return Results.Ok(yorumlar);
     });
 
@@ -238,8 +113,15 @@ using Microsoft.AspNetCore.Mvc;
  
     app.MapPost("/api/users/register", async (IKullaniciService kullaniciService, [FromBody] Kullanici yeniKullanici) =>
     {
-        var user = await kullaniciService.KayitOlAsync(yeniKullanici);
-        return user != null ? Results.Ok(user) : Results.BadRequest("Bu e-posta zaten kullanımda veya hesap önceden silinmiş.");
+        try
+        {
+            var user = await kullaniciService.KayitOlAsync(yeniKullanici);
+            return user != null ? Results.Ok(user) : Results.BadRequest("Bu e-posta zaten kullanımda veya hesap önceden silinmiş.");
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(ex.Message);
+        }
     });
 
     app.MapPost("/api/users/login", async (IKullaniciService kullaniciService, string email, string sifre) =>
@@ -248,10 +130,23 @@ using Microsoft.AspNetCore.Mvc;
         return user != null ? Results.Ok(user) : Results.Unauthorized();
     });
 
-    app.MapGet("/api/users/{id}", async (AppDbContext context, int id) =>
+    app.MapGet("/api/users/{id}", async (IKullaniciService kullaniciService, int id) =>
     {
-        var user = await context.Kullanicilar.FirstOrDefaultAsync(k => k.Id == id && !k.SilindiMi);
+        var user = await kullaniciService.KullaniciGetirAsync(id);
         return user != null ? Results.Ok(user) : Results.NotFound("Kullanıcı bulunamadı.");
+    });
+
+    app.MapPut("/api/users/{id}", async (IKullaniciService kullaniciService, int id, [FromBody] Kullanici guncelKullanici) =>
+    {
+        try
+        {
+            var user = await kullaniciService.KullaniciGuncelleAsync(id, guncelKullanici);
+            return user != null ? Results.Ok(user) : Results.NotFound("Kullanıcı bulunamadı.");
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(ex.Message);
+        }
     });
 
      app.MapPut("/api/users/{id}/change-password", async (IKullaniciService kullaniciService, int id, [FromBody] SifreDegistirmeIstegi istek) =>
@@ -276,7 +171,26 @@ using Microsoft.AspNetCore.Mvc;
         }
     });
 
+    app.MapDelete("/api/users/{id}", async (IKullaniciService kullaniciService, int id) =>
+    {
+        var isDeleted = await kullaniciService.KullaniciSilAsync(id);
+        return isDeleted ? Results.Ok(new { message = "Hesap başarıyla silindi." }) : Results.NotFound("Hesap bulunamadı veya zaten silinmiş.");
+    });
+
     app.Run();
 
+    static IResult ToHttpResult<T>(ServiceResult<T> result)
+    {
+        if (result.Success)
+        {
+            return Results.Ok(result.Value);
+        }
 
-
+        return result.StatusCode switch
+        {
+            400 => Results.BadRequest(result.Message),
+            403 => Results.Forbid(),
+            404 => Results.NotFound(result.Message),
+            _ => Results.BadRequest(result.Message)
+        };
+    }

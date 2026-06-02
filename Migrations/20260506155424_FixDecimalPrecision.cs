@@ -4,10 +4,8 @@
 
 namespace KampusRota.Migrations
 {
-    /// <inheritdoc />
     public partial class FixDecimalPrecision : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropForeignKey(
@@ -23,7 +21,6 @@ namespace KampusRota.Migrations
                 onDelete: ReferentialAction.Cascade);
         }
 
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropForeignKey(

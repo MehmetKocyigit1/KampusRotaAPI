@@ -5,10 +5,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace KampusRota.Migrations
 {
-    /// <inheritdoc />
     public partial class RideRequestsAndReviews : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
@@ -120,7 +118,6 @@ namespace KampusRota.Migrations
                 column: "YorumYapanKullaniciId");
         }
 
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(

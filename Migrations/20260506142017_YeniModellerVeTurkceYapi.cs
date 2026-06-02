@@ -5,10 +5,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace KampusRota.Migrations
 {
-    /// <inheritdoc />
     public partial class YeniModellerVeTurkceYapi : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
@@ -87,7 +85,6 @@ namespace KampusRota.Migrations
                 column: "SurucuId");
         }
 
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(

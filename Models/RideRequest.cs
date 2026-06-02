@@ -1,4 +1,4 @@
-namespace KampusRota.Models
+﻿namespace KampusRota.Models
 {
     public class YolculukTalebi : BaseEntity
     {

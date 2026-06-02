@@ -16,5 +16,17 @@ namespace KampusRota.Services
          Task<Yolculuk?> YolculukGuncelleAsync(int id, Yolculuk guncelYolculuk, int kullaniciId);
 
          Task<bool> YolculukSilAsync(int id, int silenKullaniciId);
+
+         Task<ServiceResult<YolculukTalebi>> KatilmaTalebiOlusturAsync(int yolculukId, int yolcuId, string talepMesaji);
+
+         Task<IEnumerable<YolculukTalebi>> SurucuTalepleriniGetirAsync(int surucuId);
+
+         Task<IEnumerable<YolculukTalebi>> YolcuTalepleriniGetirAsync(int yolcuId);
+
+         Task<ServiceResult<YolculukTalebi>> TalepDurumuGuncelleAsync(int talepId, int surucuId, bool onaylandi, string? surucuNotu);
+
+         Task<ServiceResult<YolculukYorumu>> YolculukYorumuEkleAsync(int yolculukId, int yorumYapanKullaniciId, int puanlananKullaniciId, YolculukYorumu yorum);
+
+         Task<IEnumerable<YolculukYorumu>> YolculukYorumlariniGetirAsync(int yolculukId);
     }
 }
