@@ -12,3 +12,6 @@ obj/
 # DB/log
 *.db
 *.log
+
+# Yerel/gizli ayarlar
+appsettings.*.local.json
