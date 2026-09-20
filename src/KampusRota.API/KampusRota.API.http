@@ -1,0 +1,6 @@
+@KampusRota.API_HostAddress = http://localhost:5008
+
+GET {{KampusRota.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

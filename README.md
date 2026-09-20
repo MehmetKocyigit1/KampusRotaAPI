@@ -1,132 +1,110 @@
-# Kampus Rota API
+# Kampus Rota API (Enterprise Clean Architecture)
 
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
-[![ASP.NET Core](https://img.shields.io/badge/ASP.NET%20Core-Minimal%20API-5C2D91)](https://learn.microsoft.com/aspnet/core)
+[![ASP.NET Core](https://img.shields.io/badge/ASP.NET%20Core-Web%20API-5C2D91)](https://learn.microsoft.com/aspnet/core)
 [![Database](https://img.shields.io/badge/Database-SQL%20Server-CC2927?logo=microsoftsqlserver)](https://www.microsoft.com/sql-server)
+[![Map](https://img.shields.io/badge/Map-OpenStreetMap%20%7C%20MapLibre-007AFF)](https://maplibre.org/)
+[![Tests](https://img.shields.io/badge/Tests-xUnit%20100%25%20Passing-brightgreen)](https://xunit.net/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue?logo=docker)](https://www.docker.com/)
 
-Kampus Rota API, kampus ici yolculuk paylasimi icin gelistirilmis ASP.NET Core tabanli bir backend projesidir. Kullanici yonetimi, yolculuk ilani olusturma, yolculuk arama, katilim talebi, talep onay/red akisi ve yolculuk sonrasi puanlama gibi temel islevleri sunar.
+**Kampus Rota**, üniversite kampüsleri ve şehir merkezleri arasında güvenli, ekonomik ve sürdürülebilir yolculuk paylaşımı (carpooling) sağlayan bir backend platformudur.
 
-## Ozellikler
+Proje, kurumsal ölçeklenebilirlik standartlarına uygun olarak **Clean Architecture (Onion Architecture)** prensipleriyle yapılandırılmış, test odaklı (TDD) ve çoklu üniversite (multi-campus) destekli olarak geliştirilmiştir.
 
-- Kullanici kayit, giris, profil guncelleme, sifre degistirme ve hesap silme
-- Yolculuk ilani listeleme, arama, olusturma, guncelleme ve silme
-- Yolculuga katilim talebi olusturma
-- Surucu tarafinda gelen talepleri onaylama veya reddetme
-- Yolcu ve surucu icin yolculuk talebi gecmisi
-- Yolculuk sonrasi puan ve yorum ekleme
-- Entity Framework Core Code First migration yapisi
-- Swagger/OpenAPI arayuzu
+---
 
-## Teknolojiler
+## 🏛️ Mimari Yapı (Clean Architecture)
 
-- .NET 8
-- ASP.NET Core Minimal API
-- Entity Framework Core 8
-- SQL Server
-- Swagger / Swashbuckle
-
-## Proje Yapisi
+Proje katmanları sorumlulukların ayrımı (Separation of Concerns) ve SOLID prensiplerine göre organize edilmiştir:
 
 ```text
 KampusRotaAPI/
-├── Data/              # Entity Framework DbContext
-├── Migrations/        # EF Core migration dosyalari
-├── Models/            # Domain modelleri
-├── Services/          # Is kurallari ve servis katmani
-├── Program.cs         # API endpoint tanimlari
-└── appsettings.json   # Temel uygulama ayarlari
+├── src/
+│   ├── KampusRota.Domain/          # Çekirdek iş varlıkları (University, CampusLocation, Yolculuk, Kullanici)
+│   ├── KampusRota.Application/     # Servis arayüzleri, DTO'lar, ServiceResult, validasyonlar
+│   ├── KampusRota.Infrastructure/  # EF Core AppDbContext, DbInitializer (Seed Data), Servis implementasyonları
+│   └── KampusRota.API/             # Web API Endpoint'leri, GlobalExceptionMiddleware, Swagger
+├── tests/
+│   └── KampusRota.UnitTests/       # xUnit, FluentAssertions ve Moq ile iş kuralı testleri
+├── Dockerfile                      # Çok aşamalı (multi-stage) Docker imajı
+└── docker-compose.yml              # SQL Server + API tek komutla çalıştırma
 ```
 
-## Kurulum
+---
 
-Gereksinimler:
+## 🚀 Öne Çıkan Özellikler
 
-- .NET 8 SDK
-- SQL Server veya SQL Server Express
-- Visual Studio 2022, Rider veya VS Code
+- **Çoklu Üniversite & Dinamik Harita (Multi-Campus OSM):**
+  - Isparta kısıtı kaldırılmış, **tüm Türkiye genelinde** harita desteği.
+  - Açık kaynak ve **%100 ücretsiz MapLibre GL + OpenStreetMap** altyapısı (kredi kartı veya API anahtarı gerekmez).
+  - Üniversiteler (`/api/universities`) ve her üniversiteye ait duraklar/kampüs noktaları (`/api/universities/{id}/locations`) dinamik olarak yüklenir.
+- **Akıllı E-posta Eşleştirme:**
+  - Öğrenci kayıt esnasında e-postasını girdiğinde (`@itu.edu.tr`, `@sdu.edu.tr`, `@metu.edu.tr`), sistem otomatik olarak kullanıcının üniversitesini tespit eder ve haritayı o kampüse odaklar.
+- **Güvenli & Esnek Yolculuk Paylaşımı:**
+  - İlan oluşturma, arama, filtreleme, katılım talepleri ve sürücü onay/red mekanizması.
+  - Sadece kadınlara özel yolculuk seçeneği ve yetki doğrulaması.
+  - Yolculuk sonrası karşılıklı puanlama ve yorum sistemi.
+- **Global Exception Handling (RFC 7807):**
+  - Tüm hatalar standart `application/problem+json` formatında döndürülür.
+- **Otomatik Veritabanı Başlatma & Seed Data:**
+  - Popüler üniversiteler (SDU, İTÜ, ODTÜ, Boğaziçi, YTÜ, Ege vb.) koordinatları ve popüler kampüs duraklarıyla otomatik olarak veritabanına eklenir.
 
-Projeyi klonlayin:
+---
+
+## 🧪 Testler (Unit Tests)
+
+Proje içerisinde iş kurallarını garanti altına alan birim testleri mevcuttur:
 
 ```bash
-git clone https://github.com/MehmetKocyigit1/KampusRotaAPI.git
-cd KampusRotaAPI
+dotnet test tests/KampusRota.UnitTests/KampusRota.UnitTests.csproj
 ```
 
-Bagimliliklari yukleyin:
+**Kapsanan Senaryolar:**
+- Sürücünün kendi ilanına başvuru yapamaması
+- Kontenjan dolduğunda rezervasyonun engellenmesi
+- Talep onaylandığında boş koltuk sayısının otomatik azaltılması
+- Geçmiş tarihli veya kalkış-varış noktası aynı olan ilanların engellenmesi
+- Puanlama sınırları (1-5) ve kullanıcının kendini puanlayamaması
+- `@edu.tr` uzantılı e-postaların doğru üniversite ile eşleştirilmesi
 
+---
+
+## 🛠️ Kurulum & Çalıştırma
+
+### 1. Seçenek: Docker ile Çalıştırma (Önerilen)
+```bash
+docker compose up -d --build
+```
+Swagger arayüzüne `http://localhost:7107/swagger` adresinden erişebilirsiniz.
+
+### 2. Seçenek: .NET CLI ile Çalıştırma
+Bağımlılıkları yükleyin:
 ```bash
 dotnet restore
 ```
 
-Veritabani baglanti adresini `appsettings.json` icinde kendi ortaminiza gore duzenleyin:
-
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=KampusRotaDb;Trusted_Connection=True;TrustServerCertificate=True;"
-  }
-}
-```
-
-Migration'lari veritabanina uygulayin:
-
+API projesini başlatın:
 ```bash
-dotnet ef database update
+dotnet run --project src/KampusRota.API/KampusRota.API.csproj
 ```
+Swagger adresi:
+`https://localhost:7107/swagger`
 
-Uygulamayi calistirin:
+---
 
-```bash
-dotnet run
-```
+## 📡 Temel API Endpoint'leri
 
-Varsayilan gelistirme ortaminda Swagger arayuzu su adreste acilir:
-
-```text
-https://localhost:7107/swagger
-```
-
-## Temel Endpointler
-
-| Metot | Endpoint | Aciklama |
-| --- | --- | --- |
-| `GET` | `/api/rides` | Tum yolculuk ilanlarini listeler |
-| `GET` | `/api/rides/search` | Kalkis, varis ve tarihe gore arama yapar |
-| `POST` | `/api/rides` | Yeni yolculuk ilani olusturur |
-| `PUT` | `/api/rides/{id}` | Yolculuk ilanini gunceller |
-| `DELETE` | `/api/rides/{id}` | Yolculuk ilanini siler |
-| `POST` | `/api/rides/{id}/requests` | Yolculuga katilim talebi gonderir |
-| `GET` | `/api/rides/requests/driver/{surucuId}` | Surucuye gelen talepleri listeler |
-| `GET` | `/api/rides/requests/passenger/{yolcuId}` | Yolcunun taleplerini listeler |
-| `PUT` | `/api/rides/requests/{talepId}/status` | Talep durumunu onaylar veya reddeder |
-| `POST` | `/api/rides/{id}/reviews` | Yolculuk yorumu ve puani ekler |
-| `POST` | `/api/users/register` | Kullanici kaydi olusturur |
-| `POST` | `/api/users/login` | Kullanici girisi yapar |
-| `GET` | `/api/users/{id}` | Kullanici profilini getirir |
-| `PUT` | `/api/users/{id}` | Kullanici profilini gunceller |
-| `PUT` | `/api/users/{id}/change-password` | Kullanici sifresini degistirir |
-| `DELETE` | `/api/users/{id}` | Kullanici hesabini siler |
-
-## Kalite Kontrol
-
-Build kontrolu:
-
-```bash
-dotnet build
-```
-
-Format kontrolu:
-
-```bash
-dotnet format --verify-no-changes
-```
-
-## Ilgili Repo
-
-Mobil istemci uygulamasi: [KampusRotaUI](https://github.com/MehmetKocyigit1/KampusRotaUI)
-
-## Notlar
-
-- Bu proje egitim ve portfolyo amacli gelistirilmistir.
-- Yerel calisma icin SQL Server baglanti adresi gelistirici ortaminda guncellenmelidir.
-- Uretim ortamina cikmadan once kimlik dogrulama, sifre hashleme ve ortam bazli gizli ayar yonetimi guclendirilmelidir.
+| Metot | Endpoint | Açıklama |
+| :--- | :--- | :--- |
+| `GET` | `/api/universities` | Tüm üniversiteleri ve durak sayılarını listeler |
+| `GET` | `/api/universities/{id}` | Üniversite detayını ve duraklarını getirir |
+| `GET` | `/api/universities/{id}/locations` | Üniversiteye ait durak/kampüs koordinatlarını getirir |
+| `GET` | `/api/universities/by-email` | E-posta uzantısından üniversiteyi bulur |
+| `GET` | `/api/rides` | Tüm aktif yolculukları listeler (Opsiyonel: `?universityId=1`) |
+| `GET` | `/api/rides/search` | Kalkış, varış, tarih ve üniversiteye göre arama yapar |
+| `POST` | `/api/rides` | Yeni yolculuk ilanı oluşturur |
+| `POST` | `/api/rides/{id}/requests` | İlana katılım talebi gönderir |
+| `PUT` | `/api/rides/requests/{talepId}/status` | Sürücünün talebi onaylaması / reddetmesi |
+| `POST` | `/api/rides/{id}/reviews` | Yolculuğa puan ve yorum ekleme |
+| `POST` | `/api/users/register` | Yeni kullanıcı kaydı |
+| `POST` | `/api/users/login` | Kullanıcı girişi |
