@@ -12,11 +12,23 @@ using KampusRota.Application.Common;
 using KampusRota.Application.DTOs;
 using KampusRota.Application.Services;
 using KampusRota.Domain.Entities;
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
 using KampusRota.Infrastructure.Persistence;
 using KampusRota.Infrastructure.Services;
 using KampusRota.API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// JSON Configuration for Turkish characters
+builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>
+{
+    options.SerializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.All);
+});
+builder.Services.Configure<Microsoft.AspNetCore.Mvc.JsonOptions>(options =>
+{
+    options.JsonSerializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.All);
+});
 
 // Database Context
 builder.Services.AddDbContext<AppDbContext>(options =>

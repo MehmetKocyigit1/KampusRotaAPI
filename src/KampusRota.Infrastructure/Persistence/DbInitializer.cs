@@ -12,11 +12,63 @@ namespace KampusRota.Infrastructure.Persistence
     {
         public static async Task SeedAsync(AppDbContext context)
         {
+            var seedUnis = GetSeedUniversities();
             if (!await context.Universities.AnyAsync())
             {
-                var universities = GetSeedUniversities();
-                await context.Universities.AddRangeAsync(universities);
+                await context.Universities.AddRangeAsync(seedUnis);
                 await context.SaveChangesAsync();
+            }
+            else
+            {
+                var existingUnis = await context.Universities.Include(u => u.Locations).ToListAsync();
+                bool hasChanges = false;
+
+                foreach (var seed in seedUnis)
+                {
+                    var existing = existingUnis.FirstOrDefault(u => u.EmailDomain == seed.EmailDomain || u.Name == seed.Name);
+                    if (existing != null)
+                    {
+                        if (existing.Name != seed.Name || existing.City != seed.City)
+                        {
+                            existing.Name = seed.Name;
+                            existing.City = seed.City;
+                            hasChanges = true;
+                        }
+
+                        if (seed.Locations != null)
+                        {
+                            foreach (var seedLoc in seed.Locations)
+                            {
+                                var existingLoc = existing.Locations?.FirstOrDefault(l => l.LocationKey == seedLoc.LocationKey);
+                                if (existingLoc != null)
+                                {
+                                    if (existingLoc.Title != seedLoc.Title || existingLoc.Category != seedLoc.Category)
+                                    {
+                                        existingLoc.Title = seedLoc.Title;
+                                        existingLoc.Category = seedLoc.Category;
+                                        hasChanges = true;
+                                    }
+                                }
+                                else
+                                {
+                                    seedLoc.UniversityId = existing.Id;
+                                    context.CampusLocations.Add(seedLoc);
+                                    hasChanges = true;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        await context.Universities.AddAsync(seed);
+                        hasChanges = true;
+                    }
+                }
+
+                if (hasChanges)
+                {
+                    await context.SaveChangesAsync();
+                }
             }
         }
 
